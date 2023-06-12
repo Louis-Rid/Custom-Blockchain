@@ -1,10 +1,11 @@
+require("dotenv").config();
 const Blockchain = require("../classes/blockchain");
 const Block = require("../classes/block");
+const Transaction = require("../classes/transaction");
+const privateKey = process.env.PRIVATE_KEY;
 
-const blockchain = new Blockchain();
+const transaction = new Transaction("123", "123", "1", 1, "123", 1, 1);
+const signablePrivateKey = new Uint8Array(Buffer.from(privateKey, "hex"));
 
-blockchain.addBlock(new Block(1, { amount: 4 }));
-blockchain.addBlock(new Block(2, { amount: 8 }));
-
-console.log("Blockchain is valid:", blockchain.isChainValid());
-console.log(JSON.stringify(blockchain, null, 2));
+transaction.sign(signablePrivateKey);
+transaction.verifySignature();
