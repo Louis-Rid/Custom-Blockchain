@@ -1,21 +1,37 @@
 const SHA256 = require("crypto-js/sha256");
+const { MerkleTree } = require("merkletreejs");
 
 class Block {
-  constructor(index, data, previousHash = "") {
+  constructor(index, previousHash = "") {
     this.index = index;
     this.timestamp = new Date().toISOString;
-    this.data = data;
+    this.transactions = [];
     this.previousHash = previousHash;
-    this.hash = this.calculateHash();
+    this.hash = "";
+  }
+
+  addTransaction(tx) {
+    this.transactions.push(tx);
+  }
+
+  encryptTransactions() {
+    const leaves = this.transactions.map((x) => SHA256(x));
+    const tree = new MerkleTree(leaves, SHA256);
+    const root = tree.getRoot().toString("hex");
+
+    this.transactions = root;
+    return root;
   }
 
   calculateHash() {
-    return SHA256(
+    const hash = SHA256(
       this.index +
         this.previousHash +
         this.timestamp +
-        JSON.stringify(this.data)
+        JSON.stringify(this.encryptTransactions())
     ).toString();
+
+    this.hash = hash;
   }
 }
 
