@@ -16,6 +16,8 @@ function newTransaction(to, from, nonce, value, data, gasLimit, gasPrice) {
     );
     return transaction;
   } catch (e) {
-    console.log("Tried to run chain but got: ------:", e);
+    console.log("Tried to create Transaction but got: ", e);
   }
 }
+
+module.exports = newTransaction;

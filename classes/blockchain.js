@@ -1,12 +1,22 @@
+const { SHA256 } = require("crypto-js");
 const Block = require("./block");
+const { MerkleTree, getRoot, getLeaves } = require("merkletreejs");
 
 class Blockchain {
   constructor() {
     this.chain = [this.createIndexBlock()];
+    this.tree = "";
   }
 
   createIndexBlock() {
-    return new Block(0, "Genesis Block", "0");
+    const indexBlock = new Block(0, "Genesis Block", "0");
+
+    // Calculate Merkle Tree
+    const leaves = [indexBlock].map((x) => SHA256(x));
+    const tree = new MerkleTree(leaves, SHA256);
+    this.tree = tree;
+
+    return indexBlock;
   }
 
   getLatestBlock() {
@@ -16,26 +26,26 @@ class Blockchain {
   // This expects a new instance of the Block class
   addBlock(newBlock) {
     newBlock.previousHash = this.getLatestBlock().hash;
-    newBlock.hash = newBlock.calculateHash();
+    newBlock.calculateHash();
     this.chain.push(newBlock);
+
+    // Calculate new Merkle Tree
+    const leaves = this.chain.map((x) => SHA256(x));
+    const tree = new MerkleTree(leaves, SHA256);
+    this.tree = tree;
   }
 
-  isChainValid() {
-    for (let i = 1; i < this.chain.length; i++) {
-      const currentBlock = this.chain[i];
-      const previousBlock = this.chain[i - 1];
-      // Checks if the current blocks hash equals the blocks hash recalculated
-      // If they do not this would indicate some thing in this block has been changed
-      if (currentBlock.hash !== currentBlock.calculateHash()) {
-        return false;
-      }
-      // Checks if the previous blocks hash equals the stored value in the current block
-      // If they do not this would indicate a previous block in the chain has been changed
-      else if (currentBlock.previousHash !== previousBlock.hash) {
-        return false;
-      } else {
-        return true;
-      }
+  isChainValid(blockIndex) {
+    try {
+      const tree = this.tree;
+      const root = tree.getRoot();
+      const leaves = tree.getLeaves();
+      const proof = tree.getProof(leaves[blockIndex]);
+      const verified = tree.verify(proof, leaves[blockIndex], root);
+      console.log(verified);
+      return verified;
+    } catch (e) {
+      console.log("Tried to check if chain is valid but got: ", e);
     }
   }
 }
